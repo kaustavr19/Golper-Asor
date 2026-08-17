@@ -28,7 +28,8 @@ body {
   color: var(--parchment);
   font-family: var(--font-ui);
   -webkit-font-smoothing: antialiased;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 #root {
