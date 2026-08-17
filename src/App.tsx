@@ -9,6 +9,8 @@ import { EpisodeList } from "./components/EpisodeList";
 import { DisclaimerModal } from "./components/DisclaimerModal";
 import { ShortcutSheet } from "./components/ShortcutSheet";
 import { KolkataClock } from "./components/KolkataClock";
+import { YouTubeMark } from "./components/YouTubeMark";
+import { useListenerPresence } from "./hooks/useListenerPresence";
 import { CHANNELS, getChannel, getCollection, type ChannelId, type CollectionKind } from "./catalogue";
 
 const PLAYER_CONTAINER_ID = "yt-hidden-player";
@@ -125,6 +127,13 @@ function App() {
   const stationCode = activeChannelId === "sunday-suspense" ? "SS" : "GMT";
 
   const currentEpisode = state.episodes[state.currentIndex];
+  const youtubeUrl = currentEpisode
+    ? `https://www.youtube.com/watch?v=${currentEpisode.id}&list=${activeCollection.playlistId}`
+    : `https://www.youtube.com/playlist?list=${activeCollection.playlistId}`;
+  const { listenerCount, status: presenceStatus } = useListenerPresence(
+    activeChannelId,
+    currentEpisode?.id,
+  );
   const progress = tuningAnim
     ? 0.5
     : state.duration > 0
@@ -160,7 +169,9 @@ function App() {
           <span className="station-label"><Radio size={14} /> {activeChannel.frequency}</span>
         </div>
         <div className="topbar-actions">
-          <span className="listener-pill"><span className="live-dot" /> story radio</span>
+          <span className={`listener-pill presence-${presenceStatus}`} title="People currently visiting this channel">
+            <span className="live-dot" /> {presenceStatus === "unavailable" ? "story radio" : `${listenerCount} online now`}
+          </span>
           <button type="button" className="round-action" onClick={() => setShowEpisodes(true)} aria-label="Open episode library">
             <ListMusic size={18} />
           </button>
@@ -208,7 +219,10 @@ function App() {
       <section className="player-dock" aria-label="Audio player">
         <div className="broadcast-console">
           <div className="console-header">
-            <span className="console-name"><Radio size={13} /> Night broadcast console</span>
+            <span className="console-name">
+              <Radio size={13} /> Night broadcast console
+              <span className="mobile-listener-count">· {listenerCount} online</span>
+            </span>
             <div className={`signal-meter${state.isBuffering || stationTuning ? " searching" : ""}`} aria-label={stationTuning ? "Searching for signal" : "Signal locked"}>
               {[1, 2, 3, 4].map((bar) => <i key={bar} />)}
             </div>
@@ -238,6 +252,7 @@ function App() {
             muted={state.muted}
             volume={state.volume}
             disabled={!state.ready || showDisclaimer}
+            youtubeUrl={youtubeUrl}
             onToggle={toggle}
             onNext={next}
             onPrev={prev}
@@ -254,6 +269,16 @@ function App() {
           >
             {state.isPlaying ? <Pause size={20} fill="currentColor" /> : <Play size={20} fill="currentColor" />}
           </button>
+          <a
+            className="mobile-youtube"
+            href={youtubeUrl}
+            target="_blank"
+            rel="noreferrer"
+            aria-label="Open the current story on YouTube"
+            title="Open in YouTube"
+          >
+            <YouTubeMark size={20} />
+          </a>
           </div>
         </div>
         <button type="button" className="library-trigger" onClick={() => setShowEpisodes(true)}>

@@ -18,6 +18,8 @@ A cinematic Bengali audio-story radio for exploring **Sunday Suspense** and
 - Curated playlists from the official Mirchi Bangla and Real Mir channels
 - Character-specific cinematic backgrounds
 - Interactive signal-waveform seeking and custom transport controls
+- Anonymous per-channel **online now** visitor counts powered by realtime presence
+- One-tap handoff from the player to the current story on YouTube
 - Responsive programme archive for desktop and mobile
 - Keyboard controls and reduced-motion support
 - No autoplay: every broadcast waits for an explicit listener action
@@ -43,10 +45,12 @@ Unverified and non-story playlists are intentionally excluded.
 - TypeScript
 - Vite
 - YouTube IFrame Player API
+- Supabase Realtime Presence
 - Lucide icons
 - Google Fonts: Tiro Bangla, Bodoni Moda, and IBM Plex
 
-There is no backend, database, or required environment variable.
+Supabase is used only for anonymous realtime listener presence. No listener
+profiles or personal details are stored by the application.
 
 ## Local development
 
@@ -56,8 +60,12 @@ Requirements: Node.js 20 or newer and npm.
 git clone https://github.com/kaustavr19/Golper-Asor.git
 cd Golper-Asor
 npm install
+copy .env.example .env.local
 npm run dev
 ```
+
+Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` in `.env.local`
+before starting the development server.
 
 The development server will print the local URL, normally
 `http://localhost:5173`.
@@ -80,7 +88,9 @@ detects the Vite configuration automatically.
 2. Keep the detected framework as **Vite**.
 3. Build command: `npm run build`.
 4. Output directory: `dist`.
-5. Deploy. No environment variables are required.
+5. Add `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` to the Vercel
+   project environment variables.
+6. Deploy.
 
 [Deploy with Vercel](https://vercel.com/new/clone?repository-url=https://github.com/kaustavr19/Golper-Asor)
 
@@ -102,7 +112,8 @@ detects the Vite configuration automatically.
 src/
 ├── assets/              Character and atmospheric backgrounds
 ├── components/          Player, waveform, archive, and radio controls
-├── hooks/               YouTube player integration
+├── hooks/               YouTube player and realtime presence integration
+├── lib/                 Shared service clients
 ├── utils/               Title parsing and thumbnail helpers
 ├── catalogue.ts         Channel and playlist catalogue
 ├── App.tsx              Main experience and interaction state

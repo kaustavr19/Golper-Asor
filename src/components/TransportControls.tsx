@@ -1,4 +1,5 @@
 import { Pause, Play, Shuffle, SkipBack, SkipForward, Volume1, Volume2, VolumeX } from "lucide-react";
+import { YouTubeMark } from "./YouTubeMark";
 
 interface TransportControlsProps {
   isPlaying: boolean;
@@ -6,6 +7,7 @@ interface TransportControlsProps {
   muted: boolean;
   volume: number;
   disabled: boolean;
+  youtubeUrl: string;
   onToggle: () => void;
   onNext: () => void;
   onPrev: () => void;
@@ -29,6 +31,7 @@ export function TransportControls({
   muted,
   volume,
   disabled,
+  youtubeUrl,
   onToggle,
   onNext,
   onPrev,
@@ -104,6 +107,16 @@ export function TransportControls({
           style={{ ["--volume-pct" as string]: `${muted ? 0 : volume}%` }}
         />
       </div>
+      <a
+        className="transport-btn youtube-link"
+        href={youtubeUrl}
+        target="_blank"
+        rel="noreferrer"
+        aria-label="Open the current story on YouTube"
+        title="Open in YouTube"
+      >
+        <YouTubeMark size={20} />
+      </a>
     </div>
   );
 }
