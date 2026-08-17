@@ -1,0 +1,68 @@
+:root {
+  --bg-void: #050914;
+  --rust-signal: #a83232;
+  --amber-glow: #d6a24c;
+  --parchment: #ede6d6;
+  --fog-grey: #6b6470;
+
+  --font-display: "Bodoni Moda", "Bodoni MT", "Didot", serif;
+  --font-ui: "IBM Plex Sans", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", "Cascadia Mono", monospace;
+  --font-bengali: "Tiro Bangla", "Noto Serif Bengali", serif;
+
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--bg-void);
+  color: var(--parchment);
+  font-family: var(--font-ui);
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+a {
+  color: var(--amber-glow);
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+::selection {
+  background: var(--rust-signal);
+  color: var(--parchment);
+}
+
+:focus-visible {
+  outline: 2px solid var(--amber-glow);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 100;
+  opacity: 0.045;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  background-repeat: repeat;
+}
