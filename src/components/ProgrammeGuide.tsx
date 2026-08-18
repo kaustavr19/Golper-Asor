@@ -1,5 +1,5 @@
-import { Check, Headphones, ListPlus, Play, Radio, Search, Shuffle, X } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Check, ChevronLeft, ChevronRight, Headphones, ListPlus, Play, Radio, Search, Shuffle, X } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Episode } from "../episodes";
 import {
   CHANNELS,
@@ -70,7 +70,9 @@ export function ProgrammeGuide({
   const [kind, setKind] = useState<"all" | CollectionKind>("all");
   const [query, setQuery] = useState("");
   const [selectedWriterId, setSelectedWriterId] = useState<string | null>(null);
+  const [seriesScroll, setSeriesScroll] = useState({ left: false, right: false });
   const selectionRef = useRef<HTMLElement>(null);
+  const seriesTabsRef = useRef<HTMLDivElement>(null);
 
   const writerProfiles = useMemo<WriterProfile[]>(() => {
     if (channel.writers?.length) return channel.writers;
@@ -127,6 +129,42 @@ export function ProgrammeGuide({
   const youtubeUrl = `https://www.youtube.com/playlist?list=${collection.playlistId}`;
   const collectionReady = episodes.length > 0 && episodes.every((episode) => episode.titleEn !== "Loading title…");
   const collectionQueued = episodes.length > 0 && episodes.every((episode) => queuedIds.has(episode.id));
+
+  const updateSeriesScroll = useCallback(() => {
+    const tabs = seriesTabsRef.current;
+    if (!tabs) return;
+    const edgeTolerance = 2;
+    setSeriesScroll({
+      left: tabs.scrollLeft > edgeTolerance,
+      right: tabs.scrollLeft + tabs.clientWidth < tabs.scrollWidth - edgeTolerance,
+    });
+  }, []);
+
+  useEffect(() => {
+    const tabs = seriesTabsRef.current;
+    if (!tabs || !writerMode) {
+      setSeriesScroll({ left: false, right: false });
+      return;
+    }
+
+    tabs.scrollLeft = 0;
+    const frame = window.requestAnimationFrame(updateSeriesScroll);
+    const observer = new ResizeObserver(updateSeriesScroll);
+    observer.observe(tabs);
+    tabs.addEventListener("scroll", updateSeriesScroll, { passive: true });
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+      observer.disconnect();
+      tabs.removeEventListener("scroll", updateSeriesScroll);
+    };
+  }, [activeWriter?.id, updateSeriesScroll, writerMode, writerSeries.length]);
+
+  const scrollSeries = (direction: -1 | 1) => {
+    const tabs = seriesTabsRef.current;
+    if (!tabs) return;
+    tabs.scrollBy({ left: direction * Math.max(280, tabs.clientWidth * 0.72), behavior: "smooth" });
+  };
 
   const scrollToSelection = () => {
     if (!window.matchMedia("(max-width: 900px)").matches) return;
@@ -237,8 +275,17 @@ export function ProgrammeGuide({
             </div>
 
             {writerMode && <div className="guide-series-panel">
-              <div className="guide-series-head"><span>Series in this archive</span><em>{writerSeries.length} available</em></div>
-              <div className="guide-series-tabs">
+              <div className="guide-series-head">
+                <span>Series in this archive</span>
+                <div className="guide-series-navigation">
+                  <em>{writerSeries.length} available</em>
+                  {(seriesScroll.left || seriesScroll.right) && <div className="guide-series-scroll-buttons" aria-label="Scroll through series">
+                    <button type="button" onClick={() => scrollSeries(-1)} disabled={!seriesScroll.left} aria-label="Show previous series"><ChevronLeft size={16} /></button>
+                    <button type="button" onClick={() => scrollSeries(1)} disabled={!seriesScroll.right} aria-label="Show more series"><ChevronRight size={16} /></button>
+                  </div>}
+                </div>
+              </div>
+              <div ref={seriesTabsRef} className="guide-series-tabs">
                 {writerSeries.map((series) => <button key={series.id} type="button" className={series.id === collection.id ? "active" : ""} onClick={() => selectCollection(series.id)}>{series.bengaliLabel && <small>{series.bengaliLabel}</small>}<strong>{series.label}</strong></button>)}
               </div>
               <div className="guide-series-actions">
