@@ -164,6 +164,12 @@ function App() {
 
   const queuedEpisode = state.queue[state.queueIndex];
   const currentEpisode = queuedEpisode ?? state.episodes[0];
+  const playbackChannel = queuedEpisode
+    ? getChannel(queuedEpisode.source.channelId as ChannelId)
+    : activeChannel;
+  const playbackCollection = queuedEpisode
+    ? getCollection(playbackChannel, queuedEpisode.source.collectionId)
+    : activeCollection;
   const currentCatalogueIndex = queuedEpisode
     ? state.episodes.findIndex((episode) => episode.id === queuedEpisode.id)
     : -1;
@@ -214,9 +220,9 @@ function App() {
       <div id={`${PLAYER_CONTAINER_ID}-catalogue-mount`} className="hidden-player-slot" />
 
       <div
-        key={activeCollection.artwork}
+        key={playbackCollection.artwork}
         className="scene"
-        style={{ backgroundImage: `url(${activeCollection.artwork || activeChannel.defaultArtwork})` }}
+        style={{ backgroundImage: `url(${playbackCollection.artwork || playbackChannel.defaultArtwork})` }}
         aria-hidden
       />
       <div className="scene-shade" aria-hidden />

@@ -155,6 +155,18 @@
 @media(max-width:520px){.guide-header h2{font-size:1.55rem}.guide-header{gap:.65rem}.guide-eyebrow{font-size:.43rem}.guide-channel-switcher button{gap:.35rem;padding:.4rem .5rem}.guide-channel-switcher button span{display:none}.guide-channel-switcher button strong{font-size:.52rem}.guide-search input{font-size:.72rem}.guide-filters button{padding:0 .55rem;font-size:.48rem}.guide-section-title div{display:block}.guide-section-title strong{display:block;margin-top:.2rem}.guide-collection-grid{gap:.5rem}.guide-collection-grid>button{min-height:8.7rem;padding:.6rem}.guide-card-copy small{font-size:.88rem}.guide-card-copy strong{font-size:.96rem}.guide-card-copy em{font-size:.38rem}.guide-selection-hero{min-height:12rem;padding:1rem}.guide-selection-actions{flex-wrap:wrap}.guide-selection .episode-index{display:none}.guide-selection .episode-row{gap:.55rem}.guide-selection .episode-duration{display:none}.archive-actions{gap:0}.archive-actions .library-trigger,.queue-trigger{padding:.3rem .5rem;font-size:.5rem}}
 @media(prefers-reduced-motion:reduce){.programme-guide{animation:none}.guide-collection-grid>button:hover{transform:none}}
 
+/* Literary Bengali display with a clean Bengali UI companion. */
+.site-title-bn,
+.now-playing-title.bengali-primary,
+.episode-title-en.bengali-primary,
+.guide-card-copy small,
+.guide-selection-hero h3{font-family:var(--font-bengali-display)}
+.hero-copy,
+.now-playing-title-bn,
+.episode-title-bn,
+.collection-grid small,
+.guide-series-tabs button small{font-family:var(--font-bengali-ui)}
+
 /* Personal listening queue */
 .queue-empty{min-height:calc(100svh - 8rem);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;color:#707782;text-align:center}.queue-empty svg{color:var(--channel-accent)}.queue-empty strong{margin-top:.8rem;color:#ede6dc;font-family:var(--font-display);font-size:1.2rem;font-weight:500}.queue-empty p{max-width:18rem;margin:.4rem 0 1rem;font-size:.68rem;line-height:1.55}.queue-empty button,.queue-footer-actions button{padding:.65rem .8rem;color:#17120d;border:0;border-radius:.3rem;background:var(--channel-accent);font-size:.52rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase}
 .queue-now{padding:.2rem 0 1rem;border-bottom:1px solid rgba(255,255,255,.09)}.queue-now-card{display:flex;align-items:center;gap:.8rem;margin-top:.55rem;padding:.65rem;border:1px solid rgba(255,255,255,.09);border-radius:.45rem;background:rgba(255,255,255,.025)}.queue-now-card img{flex:0 0 4rem;width:4rem;height:4rem;object-fit:cover;border-radius:.35rem}.queue-now-card div{min-width:0}.queue-now-card strong,.queue-now-card span{display:block;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.queue-now-card strong{color:#f1e9dd;font-family:var(--font-display);font-size:1rem;font-weight:500}.queue-now-card span{margin-top:.25rem;color:var(--channel-accent);font-family:var(--font-mono);font-size:.45rem;letter-spacing:.08em;text-transform:uppercase}

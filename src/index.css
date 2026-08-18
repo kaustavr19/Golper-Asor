@@ -5,10 +5,12 @@
   --parchment: #ede6d6;
   --fog-grey: #6b6470;
 
-  --font-display: "Bodoni Moda", "Bodoni MT", "Didot", serif;
-  --font-ui: "IBM Plex Sans", system-ui, sans-serif;
-  --font-mono: "IBM Plex Mono", "Cascadia Mono", monospace;
-  --font-bengali: "Tiro Bangla", "Noto Serif Bengali", serif;
+  --font-display: "Manrope", "Noto Serif Bengali", system-ui, sans-serif;
+  --font-ui: "Manrope", "Noto Sans Bengali", system-ui, sans-serif;
+  --font-mono: "Space Mono", "Noto Sans Bengali", monospace;
+  --font-bengali: "Noto Sans Bengali", system-ui, sans-serif;
+  --font-bengali-display: "Noto Serif Bengali", serif;
+  --font-bengali-ui: "Noto Sans Bengali", system-ui, sans-serif;
 
   color-scheme: dark;
 }
