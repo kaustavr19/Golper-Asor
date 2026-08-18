@@ -32,14 +32,15 @@ A cinematic Bengali audio-story radio for exploring **Sunday Suspense** and
 ## Catalogue
 
 The launch catalogue is defined in [`src/catalogue.ts`](src/catalogue.ts). It
-currently includes 107 curated collections, including:
+currently includes 130 curated collections, including:
 
 - **Characters:** Feluda, Byomkesh Bakshi, Professor Shonku, Taranath Tantrik,
   Kakababu, Kiriti Roy, Tenida, Eken Babu, and Sherlock Holmes
 - **Writers and works:** Rabindranath Tagore, Bankim Chandra Chattopadhyay,
   Saradindu Bandyopadhyay, Sarat Chandra Chattopadhyay, Suchitra Bhattacharya,
-  Satyajit Ray, Bibhutibhushan Bandyopadhyay, Leela Majumdar, Sukumar Ray,
-  Agatha Christie, Charles Dickens, Victor Hugo, and more
+  Satyajit Ray, Bibhutibhushan Bandyopadhyay, Syed Mustafa Siraj, Saikat
+  Mukhopadhyay, Shirshendu Mukhopadhyay, Ruskin Bond, Edgar Allan Poe, Bram
+  Stoker, Agatha Christie, Charles Dickens, Victor Hugo, and more
 - **Genres:** detective, horror, adventure, historical, comedy, and romance
 - **Originals:** GMT Shorts, GMT Onstage, GMT Originals, Shorojontro,
   Mukhosher Arale, and Golpo Mancho
