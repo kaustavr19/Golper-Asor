@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { Headphones, Info, ListMusic, Pause, Play, Radio, X } from "lucide-react";
 import "./App.css";
-import { useYouTubePlayer } from "./hooks/useYouTubePlayer";
+import { useYouTubePlayer, type PlaylistQueueInput } from "./hooks/useYouTubePlayer";
 import { SignalWaveform } from "./components/SignalWaveform";
 import { TransportControls } from "./components/TransportControls";
 import { NowPlayingCard } from "./components/NowPlayingCard";
@@ -10,7 +10,7 @@ import { ShortcutSheet } from "./components/ShortcutSheet";
 import { KolkataClock } from "./components/KolkataClock";
 import { YouTubeMark } from "./components/YouTubeMark";
 import { useListenerPresence } from "./hooks/useListenerPresence";
-import { CHANNELS, getChannel, getCollection, type ChannelId } from "./catalogue";
+import { CHANNELS, getChannel, getCollection, type ChannelId, type StoryCollection } from "./catalogue";
 import { ProgrammeGuide } from "./components/ProgrammeGuide";
 import { QueueDrawer } from "./components/QueueDrawer";
 
@@ -38,6 +38,8 @@ function App() {
     playQueueIndex,
     addEpisode,
     addCollection,
+    playPlaylistGroup,
+    addPlaylistGroup,
     removeQueueItem,
     moveQueueItem,
     clearUpNext,
@@ -166,6 +168,22 @@ function App() {
     ? state.episodes.findIndex((episode) => episode.id === queuedEpisode.id)
     : -1;
   const queuedIds = useMemo(() => new Set(state.queue.map((episode) => episode.id)), [state.queue]);
+  const toQueueInput = (collection: StoryCollection): PlaylistQueueInput => ({
+    playlistId: collection.playlistId,
+    titleContext: {
+      channelLabel: activeChannel.shortLabel,
+      collectionLabel: collection.label,
+      collectionBengaliLabel: collection.bengaliLabel,
+      collectionKind: collection.kind,
+      writer: collection.sourceWriter,
+    },
+    source: {
+      channelId: activeChannel.id,
+      collectionId: collection.id,
+      collectionLabel: collection.label,
+      playlistId: collection.playlistId,
+    },
+  });
   const upNextCount = state.queue.length ? Math.max(0, state.queue.length - state.queueIndex - 1) : 0;
   const youtubeUrl = currentEpisode
     ? `https://www.youtube.com/watch?v=${currentEpisode.id}&list=${queuedEpisode?.source.playlistId ?? activeCollection.playlistId}`
@@ -365,6 +383,13 @@ function App() {
           onPlayCollection={() => { playCollection(false); setShowGuide(false); }}
           onShuffleCollection={() => { playCollection(true); setShowGuide(false); }}
           onAddCollection={addCollection}
+          onPlayWriter={(collections, shuffle) => {
+            void playPlaylistGroup(collections.map(toQueueInput), shuffle);
+          }}
+          onAddWriter={(collections) => {
+            void addPlaylistGroup(collections.map(toQueueInput));
+          }}
+          isWriterQueueBuilding={state.isQueueBuilding}
           queuedIds={queuedIds}
         />
       )}

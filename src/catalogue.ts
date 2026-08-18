@@ -20,9 +20,17 @@ export interface StoryCollection {
   bengaliLabel?: string;
   entityLabel?: string;
   sourceWriter?: string;
+  writerId?: string;
   kind: CollectionKind;
   playlistId: string;
   videoCount: number;
+  artwork: string;
+}
+
+export interface WriterProfile {
+  id: string;
+  label: string;
+  bengaliLabel?: string;
   artwork: string;
 }
 
@@ -39,7 +47,35 @@ export interface StoryChannel {
   defaultArtwork: string;
   defaultCollectionId: string;
   collections: StoryCollection[];
+  writers?: WriterProfile[];
 }
+
+const sundaySuspenseWriters: WriterProfile[] = [
+  { id: "victor-hugo", label: "Victor Hugo", bengaliLabel: "ভিক্টর হুগো", artwork: writersArtwork },
+  { id: "charles-dickens", label: "Charles Dickens", bengaliLabel: "চার্লস ডিকেন্স", artwork: writersArtwork },
+  { id: "bankim", label: "Bankim Chandra Chattopadhyay", bengaliLabel: "বঙ্কিমচন্দ্র চট্টোপাধ্যায়", artwork: writersArtwork },
+  { id: "rabindranath", label: "Rabindranath Tagore", bengaliLabel: "রবীন্দ্রনাথ ঠাকুর", artwork: writersArtwork },
+  { id: "abanindranath", label: "Abanindranath Tagore", bengaliLabel: "অবনীন্দ্রনাথ ঠাকুর", artwork: adventureArtwork },
+  { id: "tarapada", label: "Tarapada Ray", bengaliLabel: "তারাপদ রায়", artwork: writersArtwork },
+  { id: "abhirup", label: "Abhirup Sarkar", bengaliLabel: "অভিরূপ সরকার", artwork: detectiveArtwork },
+  { id: "saradindu", label: "Saradindu Bandyopadhyay", bengaliLabel: "শরদিন্দু বন্দ্যোপাধ্যায়", artwork: byomkeshArtwork },
+  { id: "suchitra", label: "Suchitra Bhattacharya", bengaliLabel: "সুচিত্রা ভট্টাচার্য", artwork: writersArtwork },
+  { id: "abhigyan", label: "Abhigyan Ganguly", bengaliLabel: "অভিজ্ঞান গঙ্গোপাধ্যায়", artwork: writersArtwork },
+  { id: "debarati", label: "Debarati Mukhopadhyay", bengaliLabel: "দেবারতি মুখোপাধ্যায়", artwork: adventureArtwork },
+  { id: "sarat-chandra", label: "Sarat Chandra Chattopadhyay", bengaliLabel: "শরৎচন্দ্র চট্টোপাধ্যায়", artwork: writersArtwork },
+  { id: "alexandre-dumas", label: "Alexandre Dumas", bengaliLabel: "আলেকজান্ডার দ্যুমা", artwork: adventureArtwork },
+  { id: "sunil", label: "Sunil Gangopadhyay", bengaliLabel: "সুনীল গঙ্গোপাধ্যায়", artwork: kakababuArtwork },
+  { id: "shakespeare", label: "William Shakespeare", bengaliLabel: "উইলিয়াম শেক্সপিয়র", artwork: writersArtwork },
+  { id: "premendra", label: "Premendra Mitra", bengaliLabel: "প্রেমেন্দ্র মিত্র", artwork: adventureArtwork },
+  { id: "ullash", label: "Ullash Mallick", bengaliLabel: "উল্লাস মল্লিক", artwork: writersArtwork },
+  { id: "agatha-christie", label: "Agatha Christie", bengaliLabel: "আগাথা ক্রিস্টি", artwork: detectiveArtwork },
+  { id: "dipanwita", label: "Dipanwita Roy", bengaliLabel: "দীপান্বিতা রায়", artwork: detectiveArtwork },
+  { id: "satyajit", label: "Satyajit Ray", bengaliLabel: "সত্যজিৎ রায়", artwork: feludaArtwork },
+  { id: "smaranjit", label: "Smaranjit Chakraborty", bengaliLabel: "স্মরণজিৎ চক্রবর্তী", artwork: writersArtwork },
+  { id: "subodh", label: "Subodh Ghosh", bengaliLabel: "সুবোধ ঘোষ", artwork: adventureArtwork },
+  { id: "pracheta", label: "Pracheta Gupta", bengaliLabel: "প্রচেত গুপ্ত", artwork: writersArtwork },
+  { id: "abhinandan", label: "Abhinandan Bandyopadhyay", bengaliLabel: "অভিনন্দন বন্দ্যোপাধ্যায়", artwork: writersArtwork },
+];
 
 export const CHANNELS: StoryChannel[] = [
   {
@@ -54,24 +90,57 @@ export const CHANNELS: StoryChannel[] = [
     accent: "#e7a74c",
     defaultArtwork: sundayDefault,
     defaultCollectionId: "ss-feluda",
+    writers: sundaySuspenseWriters,
     collections: [
-      { id: "ss-feluda", label: "Feluda", bengaliLabel: "ফেলুদা", sourceWriter: "Satyajit Ray", kind: "character", playlistId: "PLq71IJk8mCV7wu6haZBFgoCauLDYPyMZX", videoCount: 22, artwork: feludaArtwork },
-      { id: "ss-byomkesh", label: "Byomkesh Bakshi", bengaliLabel: "ব্যোমকেশ বক্সী", sourceWriter: "Saradindu Bandyopadhyay", kind: "character", playlistId: "PLq71IJk8mCV5z1vvLnRcQSLKJnAuwmohf", videoCount: 24, artwork: byomkeshArtwork },
-      { id: "ss-shonku", label: "Professor Shonku", bengaliLabel: "প্রফেসর শঙ্কু", sourceWriter: "Satyajit Ray", kind: "character", playlistId: "PLq71IJk8mCV4Ga5SrVefTodmDZ5qkDIOc", videoCount: 40, artwork: shonkuArtwork },
+      { id: "ss-feluda", label: "Feluda", bengaliLabel: "ফেলুদা", sourceWriter: "Satyajit Ray", writerId: "satyajit", kind: "character", playlistId: "PLq71IJk8mCV7wu6haZBFgoCauLDYPyMZX", videoCount: 22, artwork: feludaArtwork },
+      { id: "ss-byomkesh", label: "Byomkesh Bakshi", bengaliLabel: "ব্যোমকেশ বক্সী", sourceWriter: "Saradindu Bandyopadhyay", writerId: "saradindu", kind: "character", playlistId: "PLq71IJk8mCV5z1vvLnRcQSLKJnAuwmohf", videoCount: 24, artwork: byomkeshArtwork },
+      { id: "ss-shonku", label: "Professor Shonku", bengaliLabel: "প্রফেসর শঙ্কু", sourceWriter: "Satyajit Ray", writerId: "satyajit", kind: "character", playlistId: "PLq71IJk8mCV4Ga5SrVefTodmDZ5qkDIOc", videoCount: 40, artwork: shonkuArtwork },
       { id: "ss-taranath", label: "Taranath Tantrik", bengaliLabel: "তারানাথ তান্ত্রিক", sourceWriter: "Bibhutibhushan Bandyopadhyay", kind: "character", playlistId: "PLq71IJk8mCV5dHmSHIb9h9JsiE9TRFuyS", videoCount: 21, artwork: taranathArtwork },
-      { id: "ss-kakababu", label: "Kakababu", bengaliLabel: "কাকাবাবু", sourceWriter: "Sunil Gangopadhyay", kind: "character", playlistId: "PLq71IJk8mCV4_vvuAFwhNqVNBYPBqcKoi", videoCount: 7, artwork: kakababuArtwork },
+      { id: "ss-kakababu", label: "Kakababu", bengaliLabel: "কাকাবাবু", sourceWriter: "Sunil Gangopadhyay", writerId: "sunil", kind: "character", playlistId: "PLq71IJk8mCV4_vvuAFwhNqVNBYPBqcKoi", videoCount: 7, artwork: kakababuArtwork },
       { id: "ss-kiriti", label: "Kiriti Roy", bengaliLabel: "কিরীটী রায়", sourceWriter: "Nihar Ranjan Gupta", kind: "character", playlistId: "PLq71IJk8mCV7Y70VeqcJN4bplhJhRoIy1", videoCount: 8, artwork: detectiveArtwork },
       { id: "ss-tenida", label: "Tenida", bengaliLabel: "টেনিদা", sourceWriter: "Narayan Gangopadhyay", kind: "character", playlistId: "PLq71IJk8mCV4Z8MvMqcjCvNwx-5DB9sRJ", videoCount: 8, artwork: adventureArtwork },
       { id: "ss-eken", label: "Eken Babu", bengaliLabel: "একেনবাবু", sourceWriter: "Sujan Dasgupta", kind: "character", playlistId: "PLq71IJk8mCV6j59qmuk93Se_W7k9bfAcu", videoCount: 2, artwork: detectiveArtwork },
       { id: "ss-sherlock", label: "Sherlock Holmes", bengaliLabel: "শার্লক হোমস", sourceWriter: "Arthur Conan Doyle", kind: "character", playlistId: "PLq71IJk8mCV4QdfUSV2KYMRZoLeZnIxHp", videoCount: 31, artwork: sherlockArtwork },
 
-      { id: "ss-tagore-bou", entityLabel: "Rabindranath Tagore", label: "Bou Thakuranir Haat", bengaliLabel: "বউ ঠাকুরানীর হাট", kind: "writer", playlistId: "PLq71IJk8mCV5di3ccQPPsp2qV_r7lhN3M", videoCount: 6, artwork: writersArtwork },
-      { id: "ss-tagore-noukadubi", entityLabel: "Rabindranath Tagore", label: "Noukadoobi", bengaliLabel: "নৌকাডুবি", kind: "writer", playlistId: "PLq71IJk8mCV6TAJVpYVR9vI3qoUR3Wguh", videoCount: 6, artwork: writersArtwork },
-      { id: "ss-bankim-will", entityLabel: "Bankim Chandra Chattopadhyay", label: "Krishnakanter Will", bengaliLabel: "কৃষ্ণকান্তের উইল", kind: "writer", playlistId: "PLq71IJk8mCV64uBqzvc4amhSEzREflanm", videoCount: 5, artwork: writersArtwork },
-      { id: "ss-bankim-bishbrikkho", entityLabel: "Bankim Chandra Chattopadhyay", label: "Bishbrikkho", bengaliLabel: "বিষবৃক্ষ", kind: "writer", playlistId: "PLq71IJk8mCV4c6yRheFI6_2PXTsetmDG4", videoCount: 7, artwork: writersArtwork },
-      { id: "ss-tarapada-comedy", entityLabel: "Tarapada Ray", label: "Comedy Stories", bengaliLabel: "হাসির গল্প", kind: "writer", playlistId: "PLq71IJk8mCV4KIbEtQuOreVnkw8lTAUfN", videoCount: 4, artwork: writersArtwork },
-      { id: "ss-tarapada-special", entityLabel: "Tarapada Ray", label: "Best of Bengali Comedy", bengaliLabel: "তারাপদ রায় স্পেশাল", kind: "writer", playlistId: "PLq71IJk8mCV6-cRQuRjHw32083YN7N4AI", videoCount: 5, artwork: writersArtwork },
-      { id: "ss-dickens", label: "Charles Dickens", entityLabel: "International classics", kind: "writer", playlistId: "PLq71IJk8mCV5_LRTSUzXwkJRV3GDc-NS5", videoCount: 4, artwork: writersArtwork },
+      { id: "ss-victor-hugo", label: "Friday Classics", bengaliLabel: "ভিক্টর হুগো ক্লাসিকস", sourceWriter: "Victor Hugo", writerId: "victor-hugo", kind: "writer", playlistId: "PLFWOZidCSRv8", videoCount: 0, artwork: writersArtwork },
+      { id: "ss-dickens", label: "Charles Dickens Classics", bengaliLabel: "চার্লস ডিকেন্স ক্লাসিকস", sourceWriter: "Charles Dickens", writerId: "charles-dickens", kind: "writer", playlistId: "PLq71IJk8mCV5_LRTSUzXwkJRV3GDc-NS5", videoCount: 4, artwork: writersArtwork },
+      { id: "ss-bankim-will", label: "Krishnakanter Will", bengaliLabel: "কৃষ্ণকান্তের উইল", sourceWriter: "Bankim Chandra Chattopadhyay", writerId: "bankim", kind: "writer", playlistId: "PLq71IJk8mCV64uBqzvc4amhSEzREflanm", videoCount: 5, artwork: writersArtwork },
+      { id: "ss-bankim-bishbrikkho", label: "Bishbrikkho", bengaliLabel: "বিষবৃক্ষ", sourceWriter: "Bankim Chandra Chattopadhyay", writerId: "bankim", kind: "writer", playlistId: "PLq71IJk8mCV4c6yRheFI6_2PXTsetmDG4", videoCount: 7, artwork: writersArtwork },
+      { id: "ss-bankim-classics", label: "Bankim Classics", bengaliLabel: "বঙ্কিমচন্দ্র ক্লাসিকস", sourceWriter: "Bankim Chandra Chattopadhyay", writerId: "bankim", kind: "writer", playlistId: "PLq71IJk8mCV5LzijmEttIWkA2ut8Wk_ep", videoCount: 0, artwork: writersArtwork },
+      { id: "ss-tagore-bou", label: "Bou Thakuranir Haat", bengaliLabel: "বউ ঠাকুরানীর হাট", sourceWriter: "Rabindranath Tagore", writerId: "rabindranath", kind: "writer", playlistId: "PLq71IJk8mCV5di3ccQPPsp2qV_r7lhN3M", videoCount: 6, artwork: writersArtwork },
+      { id: "ss-tagore-noukadubi", label: "Noukadoobi", bengaliLabel: "নৌকাডুবি", sourceWriter: "Rabindranath Tagore", writerId: "rabindranath", kind: "writer", playlistId: "PLq71IJk8mCV6TAJVpYVR9vI3qoUR3Wguh", videoCount: 6, artwork: writersArtwork },
+      { id: "ss-tarapada-comedy", label: "Comedy Stories", bengaliLabel: "মাতাল সমগ্র এবং অন্যান্য", sourceWriter: "Tarapada Ray", writerId: "tarapada", kind: "writer", playlistId: "PLq71IJk8mCV4KIbEtQuOreVnkw8lTAUfN", videoCount: 4, artwork: writersArtwork },
+      { id: "ss-tarapada-special", label: "Best of Bengali Comedy", bengaliLabel: "তারাপদ রায় স্পেশাল", sourceWriter: "Tarapada Ray", writerId: "tarapada", kind: "writer", playlistId: "PLq71IJk8mCV6-cRQuRjHw32083YN7N4AI", videoCount: 5, artwork: writersArtwork },
+      { id: "ss-abhirup-aditya", label: "Aditya Majumdar Detective Series", bengaliLabel: "আদিত্য মজুমদার", sourceWriter: "Abhirup Sarkar", writerId: "abhirup", kind: "writer", playlistId: "PLq71IJk8mCV65j1TBdI9V5WygKqCPZIza", videoCount: 0, artwork: detectiveArtwork },
+      { id: "ss-saradindu-chhayapothik", label: "Chhayapothik", bengaliLabel: "ছায়াপথিক", sourceWriter: "Saradindu Bandyopadhyay", writerId: "saradindu", kind: "writer", playlistId: "PLq71IJk8mCV5zVl4HhoX6sqYO5CRYlTNM", videoCount: 0, artwork: writersArtwork },
+      { id: "ss-saradindu-bijaylakshmi", label: "Bijaylakshmi", bengaliLabel: "বিজয়লক্ষ্মী", sourceWriter: "Saradindu Bandyopadhyay", writerId: "saradindu", kind: "writer", playlistId: "PLq71IJk8mCV76lJ06c8bd5MYxJmXWRHKV", videoCount: 0, artwork: writersArtwork },
+      { id: "ss-saradindu-path", label: "Path Bendhe Dilo", bengaliLabel: "পথ বেঁধে দিল", sourceWriter: "Saradindu Bandyopadhyay", writerId: "saradindu", kind: "writer", playlistId: "PLq71IJk8mCV6OyU4jFybwRFLVWOXXEr7D", videoCount: 0, artwork: writersArtwork },
+      { id: "ss-saradindu-rimjhim", label: "Rimjhim", bengaliLabel: "রিমঝিম", sourceWriter: "Saradindu Bandyopadhyay", writerId: "saradindu", kind: "writer", playlistId: "PLq71IJk8mCV7lDDu-42WVfB0nc3rqUdEL", videoCount: 0, artwork: writersArtwork },
+      { id: "ss-saradindu-bisher-dhnowa", label: "Bisher Dhnowa", bengaliLabel: "বিষের ধোঁয়া", sourceWriter: "Saradindu Bandyopadhyay", writerId: "saradindu", kind: "writer", playlistId: "PLq71IJk8mCV43nFq_D6WyEfZ4vqpl5gNP", videoCount: 0, artwork: writersArtwork },
+      { id: "ss-suchitra-special", label: "Selected Stories", bengaliLabel: "সুচিত্রা ভট্টাচার্য স্পেশাল", sourceWriter: "Suchitra Bhattacharya", writerId: "suchitra", kind: "writer", playlistId: "PLq71IJk8mCV4Cxr8Kie8_g-ORkzKZyg9N", videoCount: 0, artwork: writersArtwork },
+      { id: "ss-suchitra-kachher-manush", label: "Kachher Manush", bengaliLabel: "কাছের মানুষ", sourceWriter: "Suchitra Bhattacharya", writerId: "suchitra", kind: "writer", playlistId: "PLq71IJk8mCV4brlj7-d8aZq_cwDWyTESX", videoCount: 0, artwork: writersArtwork },
+      { id: "ss-suchitra-kaacher-dewal", label: "Kaacher Dewal", bengaliLabel: "কাচের দেওয়াল", sourceWriter: "Suchitra Bhattacharya", writerId: "suchitra", kind: "writer", playlistId: "PLq71IJk8mCV7BrUT389uJbSzNou_0xLIl", videoCount: 0, artwork: writersArtwork },
+      { id: "ss-abhigyan", label: "Sunday Suspense Stories", bengaliLabel: "সানডে সাসপেন্স গল্পসমগ্র", sourceWriter: "Abhigyan Ganguly", writerId: "abhigyan", kind: "writer", playlistId: "PLq71IJk8mCV4DHBGNO4rjuL4_nGqoyrwx", videoCount: 0, artwork: writersArtwork },
+      { id: "ss-debarati-ullashkar", label: "Ullashkar", bengaliLabel: "উল্লাসকর", sourceWriter: "Debarati Mukhopadhyay", writerId: "debarati", kind: "writer", playlistId: "PLq71IJk8mCV7Ti5hzIg9OXzKEVtZpgBgj", videoCount: 0, artwork: adventureArtwork },
+      { id: "ss-sarat-chandranath", label: "Chandranath", bengaliLabel: "চন্দ্রনাথ", sourceWriter: "Sarat Chandra Chattopadhyay", writerId: "sarat-chandra", kind: "writer", playlistId: "PLq71IJk8mCV7wun-2SAUWt8mLlkNofqwU", videoCount: 0, artwork: writersArtwork },
+      { id: "ss-sarat-srikanto", label: "Srikanto", bengaliLabel: "শ্রীকান্ত", sourceWriter: "Sarat Chandra Chattopadhyay", writerId: "sarat-chandra", kind: "writer", playlistId: "PLq71IJk8mCV4Az6JHmVvzEL4zj7ep4M1q", videoCount: 0, artwork: writersArtwork },
+      { id: "ss-sarat-datta", label: "Datta", bengaliLabel: "দত্তা", sourceWriter: "Sarat Chandra Chattopadhyay", writerId: "sarat-chandra", kind: "writer", playlistId: "PLq71IJk8mCV6JucNL9XjyRBCU6OkpQ16h", videoCount: 0, artwork: writersArtwork },
+      { id: "ss-sarat-classics", label: "Sarat Chandra Classics", bengaliLabel: "শরৎচন্দ্র ক্লাসিকস", sourceWriter: "Sarat Chandra Chattopadhyay", writerId: "sarat-chandra", kind: "writer", playlistId: "PLq71IJk8mCV6Lb6wZpYGRXnNZexRhJHko", videoCount: 0, artwork: writersArtwork },
+      { id: "ss-dumas-monte-cristo", label: "The Count of Monte Cristo", bengaliLabel: "দ্য কাউন্ট অফ মন্টে ক্রিস্টো", sourceWriter: "Alexandre Dumas", writerId: "alexandre-dumas", kind: "writer", playlistId: "PLq71IJk8mCV4K_AOhMVn8WV27e7vh1CwL", videoCount: 0, artwork: adventureArtwork },
+      { id: "ss-sunil-arjun", label: "Arjun", bengaliLabel: "অর্জুন", sourceWriter: "Sunil Gangopadhyay", writerId: "sunil", kind: "writer", playlistId: "PLq71IJk8mCV4zSMI4C4029ArJCVFtllSd", videoCount: 0, artwork: adventureArtwork },
+      { id: "ss-sunil-aranyer-dinratri", label: "Aranyer Dinratri", bengaliLabel: "অরণ্যের দিনরাত্রি", sourceWriter: "Sunil Gangopadhyay", writerId: "sunil", kind: "writer", playlistId: "PLq71IJk8mCV5ykK84ZxjBRG_5e-B2DQ5u", videoCount: 0, artwork: writersArtwork },
+      { id: "ss-shakespeare", label: "Shakespeare Classics", bengaliLabel: "শেক্সপিয়র ক্লাসিকস", sourceWriter: "William Shakespeare", writerId: "shakespeare", kind: "writer", playlistId: "PLq71IJk8mCV7BNyfSVeKAHTNkewM3vw24", videoCount: 0, artwork: writersArtwork },
+      { id: "ss-premendra", label: "Selected Stories", bengaliLabel: "প্রেমেন্দ্র মিত্রের গল্প", sourceWriter: "Premendra Mitra", writerId: "premendra", kind: "writer", playlistId: "PLq71IJk8mCV6ej7I6ukjV_6gpC7md8HlH", videoCount: 0, artwork: adventureArtwork },
+      { id: "ss-ullash", label: "Comedy & Other Stories", bengaliLabel: "হাসি ও অন্যান্য গল্প", sourceWriter: "Ullash Mallick", writerId: "ullash", kind: "writer", playlistId: "PLq71IJk8mCV5zKYOtVi7H4Oe0K-wUus0y", videoCount: 0, artwork: writersArtwork },
+      { id: "ss-agatha-murder-announced", label: "A Murder Is Announced", bengaliLabel: "আ মার্ডার ইজ অ্যানাউন্সড", sourceWriter: "Agatha Christie", writerId: "agatha-christie", kind: "writer", playlistId: "PLq71IJk8mCV4Ea75KA7LGqotmArmkvWjq", videoCount: 0, artwork: detectiveArtwork },
+      { id: "ss-agatha-detectives", label: "Poirot & Miss Marple", bengaliLabel: "পোয়ারো ও মিস মার্পল", sourceWriter: "Agatha Christie", writerId: "agatha-christie", kind: "writer", playlistId: "PLq71IJk8mCV6H8ju_QePvQk82Oea0sUpz", videoCount: 0, artwork: detectiveArtwork },
+      { id: "ss-dipanwita-diganta", label: "Diganta Deb Detective Series", bengaliLabel: "দিগন্ত দেব", sourceWriter: "Dipanwita Roy", writerId: "dipanwita", kind: "writer", playlistId: "PLq71IJk8mCV7PGQGtgsZsPasa_cmgVqW7", videoCount: 0, artwork: detectiveArtwork },
+      { id: "ss-satyajit-golpo-101", label: "Golpo 101", bengaliLabel: "গল্প ১০১", sourceWriter: "Satyajit Ray", writerId: "satyajit", kind: "writer", playlistId: "PLq71IJk8mCV6pnODuAYAn__XmjOSseZYz", videoCount: 0, artwork: feludaArtwork },
+      { id: "ss-smaranjit-compass", label: "Compass", bengaliLabel: "কম্পাস", sourceWriter: "Smaranjit Chakraborty", writerId: "smaranjit", kind: "writer", playlistId: "PLq71IJk8mCV5rKtWBJEt2-4CSTMXrC0jY", videoCount: 0, artwork: writersArtwork },
+      { id: "ss-smaranjit-patajhora", label: "Patajhorar Morshume", bengaliLabel: "পাতাঝরার মরশুমে", sourceWriter: "Smaranjit Chakraborty", writerId: "smaranjit", kind: "writer", playlistId: "PLq71IJk8mCV46pb9MsMy64l9LpPYx28WY", videoCount: 0, artwork: writersArtwork },
+      { id: "ss-subodh-bharat-prem", label: "Bharat Prem Katha", bengaliLabel: "ভারত প্রেমকথা", sourceWriter: "Subodh Ghosh", writerId: "subodh", kind: "writer", playlistId: "PLq71IJk8mCV4Wq9xc8_GGbUm50TO4xc5C", videoCount: 0, artwork: adventureArtwork },
+      { id: "ss-pracheta", label: "Friday Classics", bengaliLabel: "প্রচেত গুপ্তের গল্প", sourceWriter: "Pracheta Gupta", writerId: "pracheta", kind: "writer", playlistId: "PLq71IJk8mCV4z1Nrsn0y0KNdv1JZMeAbx", videoCount: 0, artwork: writersArtwork },
+      { id: "ss-abhinandan", label: "Sunday Suspense Stories", bengaliLabel: "সানডে সাসপেন্স গল্পসমগ্র", sourceWriter: "Abhinandan Bandyopadhyay", writerId: "abhinandan", kind: "writer", playlistId: "PLq71IJk8mCV4TsMk608X8ZLmnFwgHmttW", videoCount: 0, artwork: writersArtwork },
 
       { id: "ss-horror", label: "Horror & Black Magic", bengaliLabel: "ভূত, ভয় ও তন্ত্র", kind: "genre", playlistId: "PLq71IJk8mCV5QIERhRQ2n2bJ8EbsYmL_Y", videoCount: 26, artwork: horrorArtwork },
       { id: "ss-haar-heem", label: "Haar Heem Horror", bengaliLabel: "হার হিম হরর", kind: "genre", playlistId: "PLq71IJk8mCV5PPlPiLgKsyguhqXy3I4fw", videoCount: 47, artwork: horrorArtwork },
@@ -79,7 +148,7 @@ export const CHANNELS: StoryChannel[] = [
       { id: "ss-romantic", label: "Romantic Web Series", bengaliLabel: "প্রেমের গল্প", kind: "genre", playlistId: "PLq71IJk8mCV5nHKRVI64BOx63mpNXfRiQ", videoCount: 21, artwork: gmtDefault },
       { id: "ss-prem-dot-com", label: "Prem Dot Com", bengaliLabel: "প্রেম ডট কম", kind: "genre", playlistId: "PLq71IJk8mCV5QZ3AWwyekaVyiwounxMAu", videoCount: 10, artwork: gmtDefault },
       { id: "ss-freedom", label: "Freedom Struggle Stories", bengaliLabel: "স্বাধীনতার গল্প", kind: "genre", playlistId: "PLXvVTmxcl8_g", videoCount: 12, artwork: adventureArtwork },
-      { id: "ss-rajkahini", label: "Rajkahini", bengaliLabel: "রাজকাহিনী", kind: "genre", playlistId: "PLq71IJk8mCV4RZbUVjav38ua3C3ElBWH8", videoCount: 9, artwork: adventureArtwork },
+      { id: "ss-rajkahini", label: "Rajkahini", bengaliLabel: "রাজকাহিনী", sourceWriter: "Abanindranath Tagore", writerId: "abanindranath", kind: "genre", playlistId: "PLq71IJk8mCV4RZbUVjav38ua3C3ElBWH8", videoCount: 9, artwork: adventureArtwork },
       { id: "ss-gen-z", label: "Gen Z", bengaliLabel: "প্রেম, স্বপ্ন ও অভিযান", kind: "genre", playlistId: "PLDPWVmO6gJ9w", videoCount: 18, artwork: gmtDefault },
       { id: "ss-friendship", label: "Friendship Stories", bengaliLabel: "বন্ধুত্বের গল্প", kind: "genre", playlistId: "PLq71IJk8mCV6ysTa3dd4_5WAq4Eh3lHzB", videoCount: 41, artwork: gmtDefault },
 

@@ -32,12 +32,13 @@ A cinematic Bengali audio-story radio for exploring **Sunday Suspense** and
 ## Catalogue
 
 The launch catalogue is defined in [`src/catalogue.ts`](src/catalogue.ts). It
-currently includes 43 curated collections, including:
+currently includes 75 curated collections, including:
 
 - **Characters:** Feluda, Byomkesh Bakshi, Professor Shonku, Taranath Tantrik,
   Kakababu, Kiriti Roy, Tenida, Eken Babu, and Sherlock Holmes
 - **Writers and works:** Rabindranath Tagore, Bankim Chandra Chattopadhyay,
-  Tarapada Ray, Charles Dickens, Shirshendu Mukhopadhyay, Anish Deb, and more
+  Saradindu Bandyopadhyay, Sarat Chandra Chattopadhyay, Suchitra Bhattacharya,
+  Satyajit Ray, Agatha Christie, Charles Dickens, Victor Hugo, and more
 - **Genres:** detective, horror, adventure, historical, comedy, and romance
 - **Originals:** GMT Shorts, GMT Onstage, GMT Originals, Shorojontro,
   Mukhosher Arale, and Golpo Mancho
@@ -51,11 +52,21 @@ Collections can be searched or filtered by character, writer, genre, and
 original series. Choosing a collection reveals its broadcasts without stopping
 the story currently playing.
 
+The writer catalogue is hierarchical: each writer has a dedicated archive with
+their named series and shared character collections. A playlist is stored once,
+so collections such as Feluda, Byomkesh, Kakababu, Professor Shonku, and
+Rajkahini can appear under both their primary category and their writer without
+duplicating broadcasts.
+
 Each collection supports three listening modes:
 
 - **Play all** replaces the current queue and starts from the first broadcast.
 - **Shuffle all** replaces the queue with that collection in a random order.
 - **Add all** appends broadcasts that are not already in the personal queue.
+
+Writer archives provide the same play, shuffle, and add controls across every
+series by that writer, while retaining separate controls for an individual
+series.
 
 Individual broadcasts can also be added from the guide. The **Current queue**
 drawer supports reordering and removing upcoming stories. Queue state is saved

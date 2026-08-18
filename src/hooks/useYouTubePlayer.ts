@@ -4,6 +4,7 @@ import { parseEpisodeTitle, type TitleContext } from "../utils/titleParser";
 
 const QUEUE_STORAGE_KEY = "golper-asor-listening-queue-v1";
 let apiPromise: Promise<void> | null = null;
+let auxiliaryPlayerId = 0;
 
 function loadYouTubeApi(): Promise<void> {
   if (window.YT?.Player) return Promise.resolve();
@@ -67,6 +68,13 @@ export interface PlayerState {
   muted: boolean;
   shuffle: boolean;
   hasPlaybackStarted: boolean;
+  isQueueBuilding: boolean;
+}
+
+export interface PlaylistQueueInput {
+  playlistId: string;
+  titleContext: TitleContext;
+  source: EpisodeSource;
 }
 
 export function useYouTubePlayer(
@@ -84,6 +92,7 @@ export function useYouTubePlayer(
   const queueIndexRef = useRef(savedQueueRef.current.queueIndex);
   const catalogueTokenRef = useRef(0);
   const sourceRef = useRef(episodeSource);
+  const playlistCacheRef = useRef(new Map<string, QueueEpisode[]>());
   sourceRef.current = episodeSource;
 
   const [state, setState] = useState<PlayerState>({
@@ -99,6 +108,7 @@ export function useYouTubePlayer(
     muted: false,
     shuffle: false,
     hasPlaybackStarted: false,
+    isQueueBuilding: false,
   });
 
   const patch = useCallback((next: Partial<PlayerState>) => {
@@ -260,6 +270,90 @@ export function useYouTubePlayer(
 
   const withSource = useCallback((episode: Episode): QueueEpisode => ({ ...episode, source: sourceRef.current }), []);
 
+  const loadPlaylistQueue = useCallback(async (input: PlaylistQueueInput): Promise<QueueEpisode[]> => {
+    const cached = playlistCacheRef.current.get(input.playlistId);
+    if (cached) return cached.map((episode) => ({ ...episode, source: input.source }));
+
+    await loadYouTubeApi();
+    return new Promise((resolve) => {
+      const shell = document.createElement("div");
+      const slot = document.createElement("div");
+      const slotId = `${containerId}-writer-${auxiliaryPlayerId += 1}`;
+      shell.className = "hidden-player-slot";
+      slot.id = slotId;
+      shell.appendChild(slot);
+      document.body.appendChild(shell);
+
+      let player: any;
+      let settled = false;
+      const finish = (episodes: QueueEpisode[]) => {
+        if (settled) return;
+        settled = true;
+        window.clearTimeout(timeout);
+        player?.destroy?.();
+        shell.remove();
+        if (episodes.length) playlistCacheRef.current.set(input.playlistId, episodes);
+        resolve(episodes);
+      };
+      const timeout = window.setTimeout(() => finish([]), 15000);
+
+      const hydrate = (attempt = 0) => {
+        const ids: string[] | undefined = player?.getPlaylist?.();
+        if ((!ids || !ids.length) && attempt < 20) {
+          window.setTimeout(() => hydrate(attempt + 1), 300);
+          return;
+        }
+        if (!ids?.length) {
+          finish([]);
+          return;
+        }
+
+        Promise.all(ids.map(async (id, index) => {
+          const rawTitle = await fetchTitle(id);
+          const parsed = parseEpisodeTitle(rawTitle ?? "", { ...input.titleContext, episodeNumber: index + 1 });
+          return { id, ...parsed, source: input.source };
+        })).then(finish).catch(() => finish([]));
+      };
+
+      player = new window.YT.Player(slotId, {
+        height: "1",
+        width: "1",
+        playerVars: { controls: 0, disablekb: 1, modestbranding: 1, rel: 0, playsinline: 1, listType: "playlist", list: input.playlistId },
+        events: { onReady: () => hydrate(), onError: () => finish([]) },
+      });
+    });
+  }, [containerId]);
+
+  const buildPlaylistGroup = useCallback(async (inputs: PlaylistQueueInput[]) => {
+    patch({ isQueueBuilding: true });
+    try {
+      const combined: QueueEpisode[] = [];
+      for (const input of inputs) combined.push(...await loadPlaylistQueue(input));
+      const seen = new Set<string>();
+      return combined.filter((episode) => !seen.has(episode.id) && Boolean(seen.add(episode.id)));
+    } finally {
+      patch({ isQueueBuilding: false });
+    }
+  }, [loadPlaylistQueue, patch]);
+
+  const playPlaylistGroup = useCallback(async (inputs: PlaylistQueueInput[], shuffle = false) => {
+    const group = await buildPlaylistGroup(inputs);
+    if (!group.length) return;
+    const nextQueue = shuffle ? shuffleItems(group) : group;
+    setQueueState(nextQueue, 0);
+    patch({ shuffle });
+    playQueueIndex(0, true);
+  }, [buildPlaylistGroup, patch, playQueueIndex, setQueueState]);
+
+  const addPlaylistGroup = useCallback(async (inputs: PlaylistQueueInput[]) => {
+    const group = await buildPlaylistGroup(inputs);
+    if (!group.length) return;
+    const existingIds = new Set(queueRef.current.map((episode) => episode.id));
+    const additions = group.filter((episode) => !existingIds.has(episode.id));
+    if (!additions.length) return;
+    setQueueState([...queueRef.current, ...additions], queueRef.current.length ? queueIndexRef.current : 0);
+  }, [buildPlaylistGroup, setQueueState]);
+
   const playCollection = useCallback((shuffle = false) => {
     if (!episodesRef.current.length) return;
     const queue = episodesRef.current.map(withSource);
@@ -381,6 +475,8 @@ export function useYouTubePlayer(
     playQueueIndex,
     addEpisode,
     addCollection,
+    playPlaylistGroup,
+    addPlaylistGroup,
     removeQueueItem,
     moveQueueItem,
     clearUpNext,
