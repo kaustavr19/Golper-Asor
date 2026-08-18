@@ -1,17 +1,18 @@
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { Headphones, Info, ListMusic, Pause, Play, Radio, X } from "lucide-react";
 import "./App.css";
 import { useYouTubePlayer } from "./hooks/useYouTubePlayer";
 import { SignalWaveform } from "./components/SignalWaveform";
 import { TransportControls } from "./components/TransportControls";
 import { NowPlayingCard } from "./components/NowPlayingCard";
-import { EpisodeList } from "./components/EpisodeList";
 import { DisclaimerModal } from "./components/DisclaimerModal";
 import { ShortcutSheet } from "./components/ShortcutSheet";
 import { KolkataClock } from "./components/KolkataClock";
 import { YouTubeMark } from "./components/YouTubeMark";
 import { useListenerPresence } from "./hooks/useListenerPresence";
-import { CHANNELS, getChannel, getCollection, type ChannelId, type CollectionKind } from "./catalogue";
+import { CHANNELS, getChannel, getCollection, type ChannelId } from "./catalogue";
+import { ProgrammeGuide } from "./components/ProgrammeGuide";
+import { QueueDrawer } from "./components/QueueDrawer";
 
 const PLAYER_CONTAINER_ID = "yt-hidden-player";
 const TUNING_DURATION_MS = 1800;
@@ -32,13 +33,36 @@ function App() {
     setVolume,
     toggleMute,
     toggleShuffle,
-    playIndex,
-  } = useYouTubePlayer(PLAYER_CONTAINER_ID, activeCollection.playlistId);
+    playCollection,
+    playCatalogueIndex,
+    playQueueIndex,
+    addEpisode,
+    addCollection,
+    removeQueueItem,
+    moveQueueItem,
+    clearUpNext,
+  } = useYouTubePlayer(
+    PLAYER_CONTAINER_ID,
+    activeCollection.playlistId,
+    {
+      channelLabel: activeChannel.shortLabel,
+      collectionLabel: activeCollection.label,
+      collectionBengaliLabel: activeCollection.bengaliLabel,
+      collectionKind: activeCollection.kind,
+      writer: activeCollection.sourceWriter,
+    },
+    {
+      channelId: activeChannel.id,
+      collectionId: activeCollection.id,
+      collectionLabel: activeCollection.label,
+      playlistId: activeCollection.playlistId,
+    },
+  );
 
   const [showDisclaimer, setShowDisclaimer] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [showEpisodes, setShowEpisodes] = useState(false);
-  const [libraryKind, setLibraryKind] = useState<"all" | CollectionKind>("character");
+  const [showGuide, setShowGuide] = useState(false);
   const [tuningAnim, setTuningAnim] = useState(true);
   const [stationTuning, setStationTuning] = useState(false);
   const [pendingChannelId, setPendingChannelId] = useState<ChannelId | null>(null);
@@ -56,7 +80,7 @@ function App() {
   }, []);
 
   useEffect(() => {
-    if (showDisclaimer || showShortcuts) return;
+    if (showDisclaimer || showShortcuts || showGuide || showEpisodes) return;
 
     const onKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement | null;
@@ -103,7 +127,18 @@ function App() {
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [showDisclaimer, showShortcuts, toggle, prev, next, seekRelative, setVolume, toggleMute, toggleShuffle, state.volume]);
+  }, [showDisclaimer, showShortcuts, showGuide, showEpisodes, toggle, prev, next, seekRelative, setVolume, toggleMute, toggleShuffle, state.volume]);
+
+  useEffect(() => {
+    if (!showGuide && !showEpisodes) return;
+    const onEscape = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      setShowGuide(false);
+      setShowEpisodes(false);
+    };
+    window.addEventListener("keydown", onEscape);
+    return () => window.removeEventListener("keydown", onEscape);
+  }, [showGuide, showEpisodes]);
 
   const handleDisclaimerConfirm = () => {
     setShowDisclaimer(false);
@@ -117,7 +152,6 @@ function App() {
     stationTimerRef.current = window.setTimeout(() => {
       setActiveChannelId(channelId);
       setActiveCollectionId(channel.defaultCollectionId);
-      setLibraryKind(channelId === "sunday-suspense" ? "character" : "genre");
       setPendingChannelId(null);
       setStationTuning(false);
     }, 800);
@@ -126,12 +160,18 @@ function App() {
   const indicatedChannelId = pendingChannelId ?? activeChannelId;
   const stationCode = activeChannelId === "sunday-suspense" ? "SS" : "GMT";
 
-  const currentEpisode = state.episodes[state.currentIndex];
+  const queuedEpisode = state.queue[state.queueIndex];
+  const currentEpisode = queuedEpisode ?? state.episodes[0];
+  const currentCatalogueIndex = queuedEpisode
+    ? state.episodes.findIndex((episode) => episode.id === queuedEpisode.id)
+    : -1;
+  const queuedIds = useMemo(() => new Set(state.queue.map((episode) => episode.id)), [state.queue]);
+  const upNextCount = state.queue.length ? Math.max(0, state.queue.length - state.queueIndex - 1) : 0;
   const youtubeUrl = currentEpisode
-    ? `https://www.youtube.com/watch?v=${currentEpisode.id}&list=${activeCollection.playlistId}`
+    ? `https://www.youtube.com/watch?v=${currentEpisode.id}&list=${queuedEpisode?.source.playlistId ?? activeCollection.playlistId}`
     : `https://www.youtube.com/playlist?list=${activeCollection.playlistId}`;
   const { listenerCount, status: presenceStatus } = useListenerPresence(
-    activeChannelId,
+    (queuedEpisode?.source.channelId as ChannelId | undefined) ?? activeChannelId,
     currentEpisode?.id,
   );
   const progress = tuningAnim
@@ -153,6 +193,7 @@ function App() {
       style={{ "--channel-accent": activeChannel.accent } as CSSProperties}
     >
       <div id={`${PLAYER_CONTAINER_ID}-mount`} className="hidden-player-slot" />
+      <div id={`${PLAYER_CONTAINER_ID}-catalogue-mount`} className="hidden-player-slot" />
 
       <div
         key={activeCollection.artwork}
@@ -172,7 +213,7 @@ function App() {
           <span className={`listener-pill presence-${presenceStatus}`} title="People currently visiting this channel">
             <span className="live-dot" /> {presenceStatus === "unavailable" ? "story radio" : `${listenerCount} online now`}
           </span>
-          <button type="button" className="round-action" onClick={() => setShowEpisodes(true)} aria-label="Open episode library">
+          <button type="button" className="round-action" onClick={() => setShowGuide(true)} aria-label="Open programme guide">
             <ListMusic size={18} />
           </button>
           <button type="button" className="round-action" onClick={() => setShowDisclaimer(true)} aria-label="About this website">
@@ -211,7 +252,7 @@ function App() {
         <h1 className="site-title-bn">{activeChannel.bengaliTitle}</h1>
         <p className="site-title-en">{activeChannel.titleLead} {activeChannel.titleMain} · {activeChannel.frequency}</p>
         <p className="hero-copy">{activeChannel.tagline}</p>
-        <button type="button" className="active-collection" onClick={() => setShowEpisodes(true)}>
+        <button type="button" className="active-collection" onClick={() => setShowGuide(true)}>
           {activeCollection.kind} · {activeCollection.label}
         </button>
       </main>
@@ -229,7 +270,7 @@ function App() {
             <span className="console-mode">FM · ARCHIVE · STEREO</span>
           </div>
           <div className="player-content">
-          <NowPlayingCard episode={currentEpisode} isPlaying={state.isPlaying} contextLabel={activeCollection.label} />
+          <NowPlayingCard episode={currentEpisode} isPlaying={state.isPlaying} contextLabel={queuedEpisode?.source.collectionLabel ?? activeCollection.label} />
           <div className="player-progress">
             <SignalWaveform
               progress={progress}
@@ -281,50 +322,52 @@ function App() {
           </a>
           </div>
         </div>
-        <button type="button" className="library-trigger" onClick={() => setShowEpisodes(true)}>
-          <Headphones size={15} /> Open programme archive <span>{String(state.episodes.length || activeCollection.videoCount).padStart(2, "0")}</span>
-        </button>
+        <div className="archive-actions">
+          <button type="button" className="library-trigger" onClick={() => setShowGuide(true)}>
+            <Headphones size={15} /> Explore programme guide <span>{activeChannel.collections.length}</span>
+          </button>
+          <button type="button" className="queue-trigger" onClick={() => setShowEpisodes(true)}>
+            <ListMusic size={14} /> Current queue <span>{String(upNextCount).padStart(2, "0")}</span>
+          </button>
+        </div>
       </section>
 
       <aside className={`episode-drawer${showEpisodes ? " open" : ""}`} aria-hidden={!showEpisodes}>
         <div className="drawer-head">
-          <div><span className="drawer-eyebrow">Station programme guide</span><h2>Broadcast archive</h2></div>
+          <div><span className="drawer-eyebrow">Personal listening queue</span><h2>Current queue</h2></div>
           <button type="button" className="round-action" onClick={() => setShowEpisodes(false)} aria-label="Close episode library"><X size={20} /></button>
         </div>
-        <div className="drawer-channel-switcher" role="group" aria-label="Library channel">
-          {CHANNELS.map((channel) => (
-            <button key={channel.id} type="button" className={channel.id === activeChannel.id ? "active" : ""} onClick={() => selectChannel(channel.id)}>
-              {channel.shortLabel}
-            </button>
-          ))}
-        </div>
-        <div className="collection-filters" role="tablist" aria-label="Browse collections">
-          {(["all", "character", "writer", "genre", "original"] as const).map((kind) => {
-            const available = kind === "all" || activeChannel.collections.some((collection) => collection.kind === kind);
-            const labels = { all: "all", character: "characters", writer: "writers", genre: "genres", original: "originals" };
-            return available && <button key={kind} type="button" role="tab" aria-selected={libraryKind === kind} className={libraryKind === kind ? "active" : ""} onClick={() => setLibraryKind(kind)}>{labels[kind]}</button>;
-          })}
-        </div>
-        <div className="collection-grid">
-          {activeChannel.collections
-            .filter((collection) => libraryKind === "all" || collection.kind === libraryKind)
-            .map((collection) => (
-              <button key={collection.id} type="button" className={collection.id === activeCollection.id ? "active" : ""} onClick={() => setActiveCollectionId(collection.id)}>
-                <span className="collection-kind">{collection.entityLabel ?? collection.kind}</span>
-                <strong>{collection.label}</strong>
-                {collection.bengaliLabel && <small>{collection.bengaliLabel}</small>}
-                <span className="collection-meta">{collection.videoCount} archived broadcasts{collection.sourceWriter ? ` · ${collection.sourceWriter}` : ""}</span>
-              </button>
-            ))}
-        </div>
-        <div className="episode-shelf-head"><span>{activeCollection.label}</span><em>{state.episodes.length || activeCollection.videoCount} broadcasts</em></div>
-        {state.episodes.length ? (
-          <EpisodeList stationCode={stationCode} episodes={state.episodes} currentIndex={state.currentIndex} onSelect={(i) => { playIndex(i, true); setShowEpisodes(false); }} />
-        ) : (
-          <div className="catalogue-loading"><span /> Tuning this collection…</div>
-        )}
+        <QueueDrawer
+          queue={state.queue}
+          currentIndex={state.queueIndex}
+          hasPlaybackStarted={state.hasPlaybackStarted}
+          onPlay={(index) => { playQueueIndex(index, true); setShowEpisodes(false); }}
+          onRemove={removeQueueItem}
+          onMove={moveQueueItem}
+          onClear={clearUpNext}
+          onExplore={() => { setShowEpisodes(false); setShowGuide(true); }}
+        />
       </aside>
       {showEpisodes && <button className="drawer-scrim" aria-label="Close episode library" onClick={() => setShowEpisodes(false)} />}
+
+      {showGuide && (
+        <ProgrammeGuide
+          channel={activeChannel}
+          collection={activeCollection}
+          episodes={state.episodes}
+          currentIndex={currentCatalogueIndex}
+          stationCode={stationCode}
+          onClose={() => setShowGuide(false)}
+          onSelectChannel={selectChannel}
+          onSelectCollection={setActiveCollectionId}
+          onPlayEpisode={(index) => { playCatalogueIndex(index); setShowGuide(false); }}
+          onAddEpisode={addEpisode}
+          onPlayCollection={() => { playCollection(false); setShowGuide(false); }}
+          onShuffleCollection={() => { playCollection(true); setShowGuide(false); }}
+          onAddCollection={addCollection}
+          queuedIds={queuedIds}
+        />
+      )}
 
       <footer className="footer">
         <span>Unofficial fan tribute · Audio streams from YouTube</span>

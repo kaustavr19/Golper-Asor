@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { Episode } from "../episodes";
-import { parseEpisodeTitle } from "../utils/titleParser";
+import type { Episode, EpisodeSource, QueueEpisode } from "../episodes";
+import { parseEpisodeTitle, type TitleContext } from "../utils/titleParser";
 
+const QUEUE_STORAGE_KEY = "golper-asor-listening-queue-v1";
 let apiPromise: Promise<void> | null = null;
 
 function loadYouTubeApi(): Promise<void> {
@@ -32,10 +33,32 @@ async function fetchTitle(videoId: string): Promise<string | null> {
   }
 }
 
+function readSavedQueue(): { queue: QueueEpisode[]; queueIndex: number } {
+  try {
+    const saved = JSON.parse(localStorage.getItem(QUEUE_STORAGE_KEY) ?? "null");
+    if (!saved || !Array.isArray(saved.queue)) return { queue: [], queueIndex: 0 };
+    const queue = saved.queue.filter((item: QueueEpisode) => item?.id && item?.source?.playlistId);
+    const queueIndex = Math.max(0, Math.min(Number(saved.queueIndex) || 0, Math.max(0, queue.length - 1)));
+    return { queue, queueIndex };
+  } catch {
+    return { queue: [], queueIndex: 0 };
+  }
+}
+
+const shuffleItems = <T,>(items: T[]) => {
+  const next = [...items];
+  for (let index = next.length - 1; index > 0; index -= 1) {
+    const target = Math.floor(Math.random() * (index + 1));
+    [next[index], next[target]] = [next[target], next[index]];
+  }
+  return next;
+};
+
 export interface PlayerState {
   ready: boolean;
   episodes: Episode[];
-  currentIndex: number;
+  queue: QueueEpisode[];
+  queueIndex: number;
   isPlaying: boolean;
   isBuffering: boolean;
   currentTime: number;
@@ -43,20 +66,31 @@ export interface PlayerState {
   volume: number;
   muted: boolean;
   shuffle: boolean;
+  hasPlaybackStarted: boolean;
 }
 
-export function useYouTubePlayer(containerId: string, playlistId: string) {
-  const playerRef = useRef<any>(null);
+export function useYouTubePlayer(
+  containerId: string,
+  playlistId: string,
+  titleContext: TitleContext = {},
+  episodeSource: EpisodeSource,
+) {
+  const savedQueueRef = useRef(readSavedQueue());
+  const playbackPlayerRef = useRef<any>(null);
+  const cataloguePlayerRef = useRef<any>(null);
   const rafRef = useRef<number | null>(null);
-  const shuffleRef = useRef(false);
   const episodesRef = useRef<Episode[]>([]);
-  const currentIndexRef = useRef(0);
+  const queueRef = useRef<QueueEpisode[]>(savedQueueRef.current.queue);
+  const queueIndexRef = useRef(savedQueueRef.current.queueIndex);
   const catalogueTokenRef = useRef(0);
+  const sourceRef = useRef(episodeSource);
+  sourceRef.current = episodeSource;
 
   const [state, setState] = useState<PlayerState>({
     ready: false,
     episodes: [],
-    currentIndex: 0,
+    queue: savedQueueRef.current.queue,
+    queueIndex: savedQueueRef.current.queueIndex,
     isPlaying: false,
     isBuffering: false,
     currentTime: 0,
@@ -64,81 +98,68 @@ export function useYouTubePlayer(containerId: string, playlistId: string) {
     volume: 80,
     muted: false,
     shuffle: false,
+    hasPlaybackStarted: false,
   });
 
-  const patch = (next: Partial<PlayerState>) => setState((current) => ({ ...current, ...next }));
+  const patch = useCallback((next: Partial<PlayerState>) => {
+    setState((current) => ({ ...current, ...next }));
+  }, []);
 
-  const stopTicking = () => {
+  const setQueueState = useCallback((queue: QueueEpisode[], queueIndex: number) => {
+    queueRef.current = queue;
+    queueIndexRef.current = queueIndex;
+    patch({ queue, queueIndex });
+  }, [patch]);
+
+  const stopTicking = useCallback(() => {
     if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
     rafRef.current = null;
-  };
+  }, []);
 
   const tick = useCallback(() => {
-    const player = playerRef.current;
+    const player = playbackPlayerRef.current;
     if (player?.getCurrentTime) {
       patch({ currentTime: player.getCurrentTime() || 0, duration: player.getDuration() || 0 });
     }
     rafRef.current = requestAnimationFrame(tick);
-  }, []);
+  }, [patch]);
 
-  const startTicking = () => {
+  const startTicking = useCallback(() => {
     if (rafRef.current === null) rafRef.current = requestAnimationFrame(tick);
-  };
+  }, [tick]);
 
-  const hydratePlaylist = (token: number, attempt = 0) => {
-    const ids: string[] | undefined = playerRef.current?.getPlaylist?.();
-    if ((!ids || !ids.length) && attempt < 15) {
-      window.setTimeout(() => hydratePlaylist(token, attempt + 1), 300);
+  const playQueueIndex = useCallback((index: number, autoStart = true) => {
+    const queue = queueRef.current;
+    if (!queue.length) return;
+    const nextIndex = Math.max(0, Math.min(index, queue.length - 1));
+    queueIndexRef.current = nextIndex;
+    patch({ queueIndex: nextIndex, currentTime: 0, duration: 0, isBuffering: autoStart, hasPlaybackStarted: true });
+    const player = playbackPlayerRef.current;
+    if (autoStart) player?.loadVideoById?.(queue[nextIndex].id);
+    else player?.cueVideoById?.(queue[nextIndex].id);
+  }, [patch]);
+
+  const next = useCallback(() => {
+    const nextIndex = queueIndexRef.current + 1;
+    if (nextIndex >= queueRef.current.length) {
+      stopTicking();
+      patch({ isPlaying: false, isBuffering: false });
       return;
     }
-    if (!ids?.length || token !== catalogueTokenRef.current) return;
+    playQueueIndex(nextIndex, true);
+  }, [patch, playQueueIndex, stopTicking]);
 
-    const initial = ids.map((id) => ({ id, titleEn: "Loading title…" }));
-    episodesRef.current = initial;
-    patch({ episodes: initial });
+  const prev = useCallback(() => {
+    if (!queueRef.current.length) return;
+    playQueueIndex(Math.max(0, queueIndexRef.current - 1), true);
+  }, [playQueueIndex]);
 
-    ids.forEach((id, index) => {
-      fetchTitle(id).then((title) => {
-        if (!title || token !== catalogueTokenRef.current) return;
-        const current = episodesRef.current;
-        if (!current[index] || current[index].id !== id) return;
-        const next = [...current];
-        next[index] = { ...next[index], ...parseEpisodeTitle(title) };
-        episodesRef.current = next;
-        patch({ episodes: next });
-      });
-    });
-  };
-
-  const syncIndexFromPlayer = () => {
-    const index = playerRef.current?.getPlaylistIndex?.();
-    if (typeof index === "number" && index >= 0 && index !== currentIndexRef.current) {
-      currentIndexRef.current = index;
-      patch({ currentIndex: index, currentTime: 0 });
-    }
-  };
-
-  const applyDuration = () => {
-    const duration = playerRef.current?.getDuration?.() || 0;
-    const index = currentIndexRef.current;
-    const current = episodesRef.current;
-    if (!duration || !current[index] || current[index].duration) return;
-    const mins = Math.floor(duration / 60);
-    const secs = Math.floor(duration % 60).toString().padStart(2, "0");
-    const next = [...current];
-    next[index] = { ...next[index], duration: `${mins}:${secs}` };
-    episodesRef.current = next;
-    patch({ episodes: next, duration });
-  };
+  useEffect(() => {
+    localStorage.setItem(QUEUE_STORAGE_KEY, JSON.stringify({ queue: state.queue, queueIndex: state.queueIndex }));
+  }, [state.queue, state.queueIndex]);
 
   useEffect(() => {
     let cancelled = false;
-    const token = ++catalogueTokenRef.current;
-    currentIndexRef.current = 0;
-    episodesRef.current = [];
-    stopTicking();
-    patch({ ready: false, episodes: [], currentIndex: 0, currentTime: 0, duration: 0, isPlaying: false, isBuffering: true });
-
     loadYouTubeApi().then(() => {
       if (cancelled) return;
       const mount = document.getElementById(`${containerId}-mount`);
@@ -146,27 +167,23 @@ export function useYouTubePlayer(containerId: string, playlistId: string) {
       const slot = document.createElement("div");
       slot.id = containerId;
       mount.replaceChildren(slot);
-      playerRef.current = new window.YT.Player(containerId, {
+      playbackPlayerRef.current = new window.YT.Player(containerId, {
         height: "1",
         width: "1",
-        playerVars: { controls: 0, disablekb: 1, modestbranding: 1, rel: 0, playsinline: 1, listType: "playlist", list: playlistId },
+        playerVars: { controls: 0, disablekb: 1, modestbranding: 1, rel: 0, playsinline: 1 },
         events: {
           onReady: () => {
-            playerRef.current.setVolume(80);
-            patch({ ready: true, isBuffering: false });
-            hydratePlaylist(token);
+            playbackPlayerRef.current.setVolume(80);
+            patch({ ready: true });
           },
           onStateChange: (event: any) => {
             const YTState = window.YT.PlayerState;
             const playing = event.data === YTState.PLAYING;
             const buffering = event.data === YTState.BUFFERING;
             patch({ isPlaying: playing, isBuffering: buffering });
-            if (playing || event.data === YTState.CUED) applyDuration();
-            if (playing) {
-              startTicking();
-              syncIndexFromPlayer();
-            } else if (!buffering) stopTicking();
-            if (event.data === YTState.ENDED) syncIndexFromPlayer();
+            if (playing) startTicking();
+            else if (!buffering) stopTicking();
+            if (event.data === YTState.ENDED) next();
           },
         },
       });
@@ -174,79 +191,198 @@ export function useYouTubePlayer(containerId: string, playlistId: string) {
 
     return () => {
       cancelled = true;
-      catalogueTokenRef.current += 1;
       stopTicking();
-      playerRef.current?.destroy?.();
-      playerRef.current = null;
+      playbackPlayerRef.current?.destroy?.();
+      playbackPlayerRef.current = null;
     };
+  }, [containerId, next, patch, startTicking, stopTicking]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const token = ++catalogueTokenRef.current;
+    const catalogueContainerId = `${containerId}-catalogue`;
+    episodesRef.current = [];
+    patch({ episodes: [] });
+
+    const hydratePlaylist = (attempt = 0) => {
+      const ids: string[] | undefined = cataloguePlayerRef.current?.getPlaylist?.();
+      if ((!ids || !ids.length) && attempt < 15) {
+        window.setTimeout(() => hydratePlaylist(attempt + 1), 300);
+        return;
+      }
+      if (!ids?.length || token !== catalogueTokenRef.current) return;
+
+      const initial = ids.map((id) => ({ id, titleEn: "Loading title…" }));
+      episodesRef.current = initial;
+      patch({ episodes: initial });
+
+      ids.forEach((id, index) => {
+        fetchTitle(id).then((title) => {
+          if (token !== catalogueTokenRef.current) return;
+          const current = episodesRef.current;
+          if (!current[index] || current[index].id !== id) return;
+          const nextEpisodes = [...current];
+          const parsed = title
+            ? parseEpisodeTitle(title, { ...titleContext, episodeNumber: index + 1 })
+            : parseEpisodeTitle("", { ...titleContext, episodeNumber: index + 1 });
+          nextEpisodes[index] = { ...nextEpisodes[index], ...parsed };
+          episodesRef.current = nextEpisodes;
+          patch({ episodes: nextEpisodes });
+        });
+      });
+    };
+
+    loadYouTubeApi().then(() => {
+      if (cancelled) return;
+      const mount = document.getElementById(`${catalogueContainerId}-mount`);
+      if (!mount) return;
+      cataloguePlayerRef.current?.destroy?.();
+      const slot = document.createElement("div");
+      slot.id = catalogueContainerId;
+      mount.replaceChildren(slot);
+      cataloguePlayerRef.current = new window.YT.Player(catalogueContainerId, {
+        height: "1",
+        width: "1",
+        playerVars: { controls: 0, disablekb: 1, modestbranding: 1, rel: 0, playsinline: 1, listType: "playlist", list: playlistId },
+        events: { onReady: () => hydratePlaylist() },
+      });
+    });
+
+    return () => {
+      cancelled = true;
+      catalogueTokenRef.current += 1;
+      cataloguePlayerRef.current?.destroy?.();
+      cataloguePlayerRef.current = null;
+    };
+    // The playlist id represents the selected collection and refreshes its context.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [containerId, playlistId]);
+  }, [containerId, playlistId, patch]);
 
-  const playIndex = (index: number, autoStart = true) => {
-    const list = episodesRef.current;
-    if (!list.length) return;
-    const nextIndex = ((index % list.length) + list.length) % list.length;
-    currentIndexRef.current = nextIndex;
-    patch({ currentIndex: nextIndex, currentTime: 0 });
-    if (autoStart) playerRef.current?.playVideoAt?.(nextIndex);
-    else {
-      playerRef.current?.playVideoAt?.(nextIndex);
-      playerRef.current?.pauseVideo?.();
-    }
-  };
+  const withSource = useCallback((episode: Episode): QueueEpisode => ({ ...episode, source: sourceRef.current }), []);
 
-  const play = () => playerRef.current?.playVideo?.();
-  const pause = () => playerRef.current?.pauseVideo?.();
-  const toggle = () => state.isPlaying ? pause() : play();
-
-  const next = () => {
+  const playCollection = useCallback((shuffle = false) => {
     if (!episodesRef.current.length) return;
-    if (!shuffleRef.current) {
-      playerRef.current?.nextVideo?.();
-      window.setTimeout(syncIndexFromPlayer, 200);
+    const queue = episodesRef.current.map(withSource);
+    const nextQueue = shuffle ? shuffleItems(queue) : queue;
+    setQueueState(nextQueue, 0);
+    patch({ shuffle });
+    playQueueIndex(0, true);
+  }, [patch, playQueueIndex, setQueueState, withSource]);
+
+  const playCatalogueIndex = useCallback((index: number) => {
+    const episode = episodesRef.current[index];
+    if (!episode) return;
+    const selected = withSource(episode);
+    const remaining = queueRef.current
+      .slice(queueIndexRef.current + 1)
+      .filter((item) => item.id !== selected.id);
+    const nextQueue = [selected, ...remaining];
+    setQueueState(nextQueue, 0);
+    playQueueIndex(0, true);
+  }, [playQueueIndex, setQueueState, withSource]);
+
+  const addEpisode = useCallback((index: number) => {
+    const episode = episodesRef.current[index];
+    if (!episode || queueRef.current.some((item) => item.id === episode.id)) return;
+    setQueueState([...queueRef.current, withSource(episode)], queueIndexRef.current);
+  }, [setQueueState, withSource]);
+
+  const addCollection = useCallback(() => {
+    const existingIds = new Set(queueRef.current.map((item) => item.id));
+    const additions = episodesRef.current.filter((episode) => !existingIds.has(episode.id)).map(withSource);
+    if (!additions.length) return;
+    const queueIndex = queueRef.current.length ? queueIndexRef.current : 0;
+    setQueueState([...queueRef.current, ...additions], queueIndex);
+  }, [setQueueState, withSource]);
+
+  const removeQueueItem = useCallback((index: number) => {
+    if (index === queueIndexRef.current || index < 0 || index >= queueRef.current.length) return;
+    const nextQueue = queueRef.current.filter((_, itemIndex) => itemIndex !== index);
+    const nextIndex = index < queueIndexRef.current ? queueIndexRef.current - 1 : queueIndexRef.current;
+    setQueueState(nextQueue, Math.max(0, nextIndex));
+  }, [setQueueState]);
+
+  const moveQueueItem = useCallback((index: number, direction: -1 | 1) => {
+    const target = index + direction;
+    if (index <= queueIndexRef.current || target <= queueIndexRef.current || target >= queueRef.current.length) return;
+    const nextQueue = [...queueRef.current];
+    [nextQueue[index], nextQueue[target]] = [nextQueue[target], nextQueue[index]];
+    setQueueState(nextQueue, queueIndexRef.current);
+  }, [setQueueState]);
+
+  const clearUpNext = useCallback(() => {
+    if (!queueRef.current.length) return;
+    const current = queueRef.current[queueIndexRef.current];
+    setQueueState(current ? [current] : [], 0);
+  }, [setQueueState]);
+
+  const play = useCallback(() => {
+    if (!queueRef.current.length) {
+      playCollection(false);
       return;
     }
-    playIndex(Math.floor(Math.random() * episodesRef.current.length), true);
-  };
+    const currentId = playbackPlayerRef.current?.getVideoData?.()?.video_id;
+    const queuedId = queueRef.current[queueIndexRef.current]?.id;
+    if (currentId !== queuedId) playQueueIndex(queueIndexRef.current, true);
+    else playbackPlayerRef.current?.playVideo?.();
+  }, [playCollection, playQueueIndex]);
 
-  const prev = () => {
-    if (!episodesRef.current.length) return;
-    if (!shuffleRef.current) {
-      playerRef.current?.previousVideo?.();
-      window.setTimeout(syncIndexFromPlayer, 200);
-      return;
-    }
-    playIndex(Math.floor(Math.random() * episodesRef.current.length), true);
-  };
+  const pause = useCallback(() => playbackPlayerRef.current?.pauseVideo?.(), []);
+  const toggle = useCallback(() => state.isPlaying ? pause() : play(), [pause, play, state.isPlaying]);
 
-  const seekTo = (seconds: number) => {
-    playerRef.current?.seekTo?.(seconds, true);
+  const seekTo = useCallback((seconds: number) => {
+    playbackPlayerRef.current?.seekTo?.(seconds, true);
     patch({ currentTime: seconds });
-  };
+  }, [patch]);
 
-  const seekRelative = (delta: number) => {
-    const player = playerRef.current;
+  const seekRelative = useCallback((delta: number) => {
+    const player = playbackPlayerRef.current;
     if (!player) return;
     seekTo(Math.max(0, Math.min(player.getDuration?.() || 0, (player.getCurrentTime?.() || 0) + delta)));
-  };
+  }, [seekTo]);
 
-  const setVolume = (value: number) => {
+  const setVolume = useCallback((value: number) => {
     const volume = Math.max(0, Math.min(100, value));
-    playerRef.current?.setVolume?.(volume);
-    if (volume > 0 && state.muted) playerRef.current?.unMute?.();
+    playbackPlayerRef.current?.setVolume?.(volume);
+    if (volume > 0 && state.muted) playbackPlayerRef.current?.unMute?.();
     patch({ volume, muted: volume > 0 ? false : state.muted });
-  };
+  }, [patch, state.muted]);
 
-  const toggleMute = () => {
-    if (state.muted) playerRef.current?.unMute?.();
-    else playerRef.current?.mute?.();
+  const toggleMute = useCallback(() => {
+    if (state.muted) playbackPlayerRef.current?.unMute?.();
+    else playbackPlayerRef.current?.mute?.();
     patch({ muted: !state.muted });
-  };
+  }, [patch, state.muted]);
 
-  const toggleShuffle = () => {
-    shuffleRef.current = !shuffleRef.current;
-    patch({ shuffle: shuffleRef.current });
-  };
+  const toggleShuffle = useCallback(() => {
+    const shuffle = !state.shuffle;
+    if (shuffle && queueRef.current.length > queueIndexRef.current + 2) {
+      const played = queueRef.current.slice(0, queueIndexRef.current + 1);
+      const upNext = shuffleItems(queueRef.current.slice(queueIndexRef.current + 1));
+      setQueueState([...played, ...upNext], queueIndexRef.current);
+    }
+    patch({ shuffle });
+  }, [patch, setQueueState, state.shuffle]);
 
-  return { state, play, pause, toggle, next, prev, seekTo, seekRelative, setVolume, toggleMute, toggleShuffle, playIndex };
+  return {
+    state,
+    play,
+    pause,
+    toggle,
+    next,
+    prev,
+    seekTo,
+    seekRelative,
+    setVolume,
+    toggleMute,
+    toggleShuffle,
+    playCollection,
+    playCatalogueIndex,
+    playQueueIndex,
+    addEpisode,
+    addCollection,
+    removeQueueItem,
+    moveQueueItem,
+    clearUpNext,
+  };
 }

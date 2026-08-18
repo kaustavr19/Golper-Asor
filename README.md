@@ -14,10 +14,15 @@ A cinematic Bengali audio-story radio for exploring **Sunday Suspense** and
 
 - Two radio-style stations with a silent tuning transition
 - Bengali-first station identity with English callsigns
-- Browse by character, writer, genre, or original series
+- Full-screen Programme Guide with channel switching, collection filters, and search
+- Browse by character, writer, genre, or original series without interrupting playback
 - Curated playlists from the official Mirchi Bangla and Real Mir channels
 - Character-specific cinematic backgrounds
+- Context-aware story titles that remove broadcaster, cast, and episode-label clutter
 - Interactive signal-waveform seeking and custom transport controls
+- Personal listening queues with add, remove, reorder, previous, and next controls
+- Play, shuffle, or queue an entire character, writer, genre, or original-series collection
+- Queue persistence between visits without autoplaying on return
 - Anonymous per-channel **online now** visitor counts powered by realtime presence
 - One-tap handoff from the player to the current story on YouTube
 - Responsive programme archive for desktop and mobile
@@ -27,10 +32,10 @@ A cinematic Bengali audio-story radio for exploring **Sunday Suspense** and
 ## Catalogue
 
 The launch catalogue is defined in [`src/catalogue.ts`](src/catalogue.ts). It
-currently includes 40 curated collections, including:
+currently includes 43 curated collections, including:
 
 - **Characters:** Feluda, Byomkesh Bakshi, Professor Shonku, Taranath Tantrik,
-  Kakababu, and Sherlock Holmes
+  Kakababu, Kiriti Roy, Tenida, Eken Babu, and Sherlock Holmes
 - **Writers and works:** Rabindranath Tagore, Bankim Chandra Chattopadhyay,
   Tarapada Ray, Charles Dickens, Shirshendu Mukhopadhyay, Anish Deb, and more
 - **Genres:** detective, horror, adventure, historical, comedy, and romance
@@ -38,6 +43,24 @@ currently includes 40 curated collections, including:
   Mukhosher Arale, and Golpo Mancho
 
 Unverified and non-story playlists are intentionally excluded.
+
+## Programme guide and queue
+
+Open **Programme Guide** to explore both stations in a dedicated catalogue view.
+Collections can be searched or filtered by character, writer, genre, and
+original series. Choosing a collection reveals its broadcasts without stopping
+the story currently playing.
+
+Each collection supports three listening modes:
+
+- **Play all** replaces the current queue and starts from the first broadcast.
+- **Shuffle all** replaces the queue with that collection in a random order.
+- **Add all** appends broadcasts that are not already in the personal queue.
+
+Individual broadcasts can also be added from the guide. The **Current queue**
+drawer supports reordering and removing upcoming stories. Queue state is saved
+locally in the listener's browser; restoring a saved queue never starts audio
+until the listener presses play.
 
 ## Tech stack
 
@@ -111,8 +134,8 @@ detects the Vite configuration automatically.
 ```text
 src/
 ├── assets/              Character and atmospheric backgrounds
-├── components/          Player, waveform, archive, and radio controls
-├── hooks/               YouTube player and realtime presence integration
+├── components/          Player, waveform, programme guide, queue, and radio controls
+├── hooks/               YouTube playback, queue, and realtime presence integration
 ├── lib/                 Shared service clients
 ├── utils/               Title parsing and thumbnail helpers
 ├── catalogue.ts         Channel and playlist catalogue

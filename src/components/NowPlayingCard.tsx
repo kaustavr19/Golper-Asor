@@ -33,8 +33,10 @@ export function NowPlayingCard({ episode, isPlaying, contextLabel }: NowPlayingC
         </div>
         {episode ? (
           <>
-            <h2 className="now-playing-title">{episode.titleEn}</h2>
-            {episode.titleBn && <p className="now-playing-title-bn">{episode.titleBn}</p>}
+            <h2 className={`now-playing-title${episode.titleIsFallback && episode.titleBn ? " bengali-primary" : ""}`}>
+              {episode.titleIsFallback && episode.titleBn ? episode.titleBn : episode.titleEn}
+            </h2>
+            {episode.titleBn && !episode.titleIsFallback && <p className="now-playing-title-bn">{episode.titleBn}</p>}
             {secondary && <p className="now-playing-series">{secondary}</p>}
           </>
         ) : (

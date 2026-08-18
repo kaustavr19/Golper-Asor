@@ -60,6 +60,9 @@ export const CHANNELS: StoryChannel[] = [
       { id: "ss-shonku", label: "Professor Shonku", bengaliLabel: "প্রফেসর শঙ্কু", sourceWriter: "Satyajit Ray", kind: "character", playlistId: "PLq71IJk8mCV4Ga5SrVefTodmDZ5qkDIOc", videoCount: 40, artwork: shonkuArtwork },
       { id: "ss-taranath", label: "Taranath Tantrik", bengaliLabel: "তারানাথ তান্ত্রিক", sourceWriter: "Bibhutibhushan Bandyopadhyay", kind: "character", playlistId: "PLq71IJk8mCV5dHmSHIb9h9JsiE9TRFuyS", videoCount: 21, artwork: taranathArtwork },
       { id: "ss-kakababu", label: "Kakababu", bengaliLabel: "কাকাবাবু", sourceWriter: "Sunil Gangopadhyay", kind: "character", playlistId: "PLq71IJk8mCV4_vvuAFwhNqVNBYPBqcKoi", videoCount: 7, artwork: kakababuArtwork },
+      { id: "ss-kiriti", label: "Kiriti Roy", bengaliLabel: "কিরীটী রায়", sourceWriter: "Nihar Ranjan Gupta", kind: "character", playlistId: "PLq71IJk8mCV7Y70VeqcJN4bplhJhRoIy1", videoCount: 8, artwork: detectiveArtwork },
+      { id: "ss-tenida", label: "Tenida", bengaliLabel: "টেনিদা", sourceWriter: "Narayan Gangopadhyay", kind: "character", playlistId: "PLq71IJk8mCV4Z8MvMqcjCvNwx-5DB9sRJ", videoCount: 8, artwork: adventureArtwork },
+      { id: "ss-eken", label: "Eken Babu", bengaliLabel: "একেনবাবু", sourceWriter: "Sujan Dasgupta", kind: "character", playlistId: "PLq71IJk8mCV6j59qmuk93Se_W7k9bfAcu", videoCount: 2, artwork: detectiveArtwork },
       { id: "ss-sherlock", label: "Sherlock Holmes", bengaliLabel: "শার্লক হোমস", sourceWriter: "Arthur Conan Doyle", kind: "character", playlistId: "PLq71IJk8mCV4QdfUSV2KYMRZoLeZnIxHp", videoCount: 31, artwork: sherlockArtwork },
 
       { id: "ss-tagore-bou", entityLabel: "Rabindranath Tagore", label: "Bou Thakuranir Haat", bengaliLabel: "বউ ঠাকুরানীর হাট", kind: "writer", playlistId: "PLq71IJk8mCV5di3ccQPPsp2qV_r7lhN3M", videoCount: 6, artwork: writersArtwork },
